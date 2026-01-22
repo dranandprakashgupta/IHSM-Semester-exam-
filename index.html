@@ -2,24 +2,24 @@
 <html>
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>College MCQ Practice</title>
+
   <style>
     body{font-family:system-ui,Arial;margin:0;padding:16px;max-width:900px}
     .card{border:1px solid #ddd;border-radius:12px;padding:16px;margin:12px 0}
-    button{padding:10px 12px;border-radius:10px;border:1px solid #ccc;background:#fff;width:100%;margin:6px 0;text-align:left}
-    button:disabled{opacity:.8}
+    button{padding:10px;border-radius:10px;border:1px solid #ccc;background:#fff;width:100%;margin:6px 0;text-align:left}
     .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
     select,input{padding:10px;border-radius:10px;border:1px solid #ccc}
-    .pill{display:inline-block;padding:4px 10px;border-radius:999px;border:1px solid #ddd;margin-left:8px;font-size:12px}
+    .pill{padding:4px 10px;border-radius:999px;border:1px solid #ddd}
   </style>
 </head>
-<body>
-  <h2>College MCQ Practice <span id="meta" class="pill"></span></h2>
 
-  <div class="row">
+<body>
+<h2>College MCQ Practice <span id="meta" class="pill"></span></h2>
+
+<div class="row">
   <select id="year"></select>
-  <select id="subject"></select>
 
   <select id="mode">
     <option value="practice">Practice (answer after click)</option>
@@ -31,6 +31,12 @@
     Shuffle
   </label>
 
-  <input id="limit" type="number" min="1" value="200" style="width:110px" />
-  <button id="start" style="width:auto">Start</button>
-  </div>
+  <input id="limit" type="number" value="200" style="width:110px"/>
+  <button id="start">Start</button>
+</div>
+
+<div id="app"></div>
+
+<script src="script.js"></script>
+</body>
+</html>
