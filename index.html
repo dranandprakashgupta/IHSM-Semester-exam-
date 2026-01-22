@@ -18,18 +18,19 @@
   <h2>College MCQ Practice <span id="meta" class="pill"></span></h2>
 
   <div class="row">
-    <select id="year"></select>
-    <select id="subject"></select>
-    <select id="mode">
-      <option value="practice">Practice (answer after click)</option>
-      <option value="exam">Exam (answer at end)</option>
-    </select>
-    <input id="limit" type="number" min="1" value="20" style="width:110px" />
-    <button id="start" style="width:auto">Start</button>
+  <select id="year"></select>
+  <select id="subject"></select>
+
+  <select id="mode">
+    <option value="practice">Practice (answer after click)</option>
+    <option value="exam">Exam (answer at end)</option>
+  </select>
+
+  <label style="display:flex;align-items:center;gap:6px">
+    <input id="shuffle" type="checkbox" checked />
+    Shuffle
+  </label>
+
+  <input id="limit" type="number" min="1" value="200" style="width:110px" />
+  <button id="start" style="width:auto">Start</button>
   </div>
-
-  <div id="app"></div>
-
-  <script src="script.js"></script>
-</body>
-</html>
