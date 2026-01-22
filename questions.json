@@ -1,211 +1,26 @@
-let ALL = [];
-let CURRENT = [];
-let idx = 0;
-let correct = 0;
-let chosen = [];
-
-// Each item in CURRENT will have:
-// { ...originalQuestion, shuffledOptions: [...], shuffledAnswerIndex: number }
-
-const $ = (id) => document.getElementById(id);
-
-async function load() {
-  const res = await fetch("questions.json");
-  ALL = await res.json();
-
-  // years dropdown
-  const years = [...new Set(ALL.map(q => q.year))].sort((a, b) => b - a);
-  $("year").innerHTML = years.map(y => `<option value="${y}">${y}</option>`).join("");
-  $("meta").textContent = `${ALL.length} questions`;
-
-  $("start").onclick = () => startQuiz();
-}
-
-function shuffleInPlace(a) {
-  for (let i = a.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [a[i], a[j]] = [a[j], a[i]];
+[
+  {
+    "year": 2025,
+    "question": "Obliterating thromboangiitis occurs due to:",
+    "options": [
+      "Smoking",
+      "Exposure to cold",
+      "Infection",
+      "Stress",
+      "All of the above"
+    ],
+    "answerIndex": 0
+  },
+  {
+    "year": 2025,
+    "question": "Acute appendicitis is NOT characterized by:",
+    "options": [
+      "Murphy’s sign",
+      "Obraztsov’s sign",
+      "Rovsing’s sign",
+      "Voskresensky’s sign",
+      "Bartomier–Michelson’s sign"
+    ],
+    "answerIndex": 0
   }
-  return a;
-}
-
-function escapeHtml(s) {
-  return String(s)
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;");
-}
-
-// Returns { options: shuffledOptions, answerIndex: newAnswerIndex }
-function shuffleOptionsPreserveAnswer(options, answerIndex) {
-  // Create pairs so we can track where the correct option goes after shuffling
-  const pairs = options.map((text, i) => ({ text, isCorrect: i === answerIndex }));
-  shuffleInPlace(pairs);
-
-  const shuffledOptions = pairs.map(p => p.text);
-  const newAnswerIndex = pairs.findIndex(p => p.isCorrect);
-
-  return { options: shuffledOptions, answerIndex: newAnswerIndex };
-}
-
-function startQuiz() {
-  const year = Number($("year").value);
-  const mode = $("mode").value; // practice or exam
-  const limit = Math.max(1, Number($("limit").value || 20));
-
-  // Filter year
-  let pool = ALL.filter(q => q.year === year);
-
-  // Shuffle questions
-  shuffleInPlace(pool);
-
-  // Take limit
-  pool = pool.slice(0, Math.min(limit, pool.length));
-
-  // Prepare CURRENT with shuffled options (and corrected answer index)
-  CURRENT = pool.map(q => {
-    // If answerIndex is null/undefined, we keep it null (no scoring)
-    const hasAnswer = Number.isInteger(q.answerIndex);
-
-    if (!hasAnswer) {
-      return {
-        ...q,
-        shuffledOptions: [...q.options],
-        shuffledAnswerIndex: null
-      };
-    }
-
-    const { options: shuffledOptions, answerIndex: newAnswerIndex } =
-      shuffleOptionsPreserveAnswer(q.options, q.answerIndex);
-
-    return {
-      ...q,
-      shuffledOptions,
-      shuffledAnswerIndex: newAnswerIndex
-    };
-  });
-
-  idx = 0;
-  correct = 0;
-  chosen = new Array(CURRENT.length).fill(null);
-
-  renderQuestion(mode);
-}
-
-function renderQuestion(mode) {
-  const app = $("app");
-
-  if (idx >= CURRENT.length) {
-    app.innerHTML = `
-      <div class="card">
-        <h3>Finished</h3>
-        <p>Score: <b>${correct} / ${CURRENT.length}</b></p>
-        ${mode === "exam" ? renderReview() : ""}
-      </div>
-    `;
-    return;
-  }
-
-  const q = CURRENT[idx];
-  const n = idx + 1;
-
-  app.innerHTML = `
-    <div class="card">
-      <div><b>Q${n}.</b> ${escapeHtml(q.question)}</div>
-      <div style="margin-top:10px" id="opts"></div>
-      <div class="row" style="margin-top:10px">
-        <button id="prev" style="width:auto">Prev</button>
-        <button id="next" style="width:auto">Next</button>
-        <span class="pill">Progress: ${n}/${CURRENT.length}</span>
-      </div>
-      <div id="feedback" style="margin-top:10px"></div>
-    </div>
-  `;
-
-  $("prev").onclick = () => { if (idx > 0) { idx--; renderQuestion(mode); } };
-  $("next").onclick = () => { idx++; renderQuestion(mode); };
-
-  const opts = $("opts");
-
-  q.shuffledOptions.forEach((text, i) => {
-    const b = document.createElement("button");
-    b.textContent = `${String.fromCharCode(65 + i)}. ${text}`;
-    b.onclick = () => choose(mode, i);
-    opts.appendChild(b);
-  });
-
-  // Show previously chosen in exam mode navigation
-  if (mode === "exam" && chosen[idx] !== null) {
-    $("feedback").innerHTML = `<span class="pill">Selected: ${String.fromCharCode(65 + chosen[idx])}</span>`;
-  }
-}
-
-function choose(mode, optionIndex) {
-  const q = CURRENT[idx];
-
-  // If no answers exist, we just record selection (no scoring)
-  const hasAnswer = Number.isInteger(q.shuffledAnswerIndex);
-
-  if (mode === "practice") {
-    if (!hasAnswer) {
-      $("feedback").innerHTML = `<span class="pill">Saved: ${String.fromCharCode(65 + optionIndex)}</span>`;
-      chosen[idx] = optionIndex;
-      return;
-    }
-
-    const isRight = optionIndex === q.shuffledAnswerIndex;
-
-    $("feedback").innerHTML = isRight
-      ? `<b>Correct ✅</b> (Answer: ${String.fromCharCode(65 + q.shuffledAnswerIndex)})`
-      : `<b>Wrong ❌</b> (Correct: ${String.fromCharCode(65 + q.shuffledAnswerIndex)})`;
-
-    // prevent double scoring
-    if (chosen[idx] === null) {
-      chosen[idx] = optionIndex;
-      if (isRight) correct++;
-    }
-  } else {
-    // exam mode: store only, score at end
-    chosen[idx] = optionIndex;
-    $("feedback").innerHTML = `<span class="pill">Selected: ${String.fromCharCode(65 + optionIndex)}</span>`;
-  }
-}
-
-function renderReview() {
-  correct = 0;
-
-  const rows = CURRENT.map((q, i) => {
-    const sel = chosen[i];
-    const hasAnswer = Number.isInteger(q.shuffledAnswerIndex);
-
-    if (!hasAnswer) {
-      return `
-        <div class="card">
-          <div><b>Q${i + 1}.</b> ${escapeHtml(q.question)}</div>
-          <div style="margin-top:6px">
-            Your: <b>${sel === null ? "-" : String.fromCharCode(65 + sel)}</b> |
-            Correct: <b>Not set</b>
-          </div>
-        </div>
-      `;
-    }
-
-    const ok = sel === q.shuffledAnswerIndex;
-    if (ok) correct++;
-
-    return `
-      <div class="card">
-        <div><b>Q${i + 1}.</b> ${escapeHtml(q.question)}</div>
-        <div style="margin-top:6px">
-          Your: <b>${sel === null ? "-" : String.fromCharCode(65 + sel)}</b> |
-          Correct: <b>${String.fromCharCode(65 + q.shuffledAnswerIndex)}</b>
-          ${ok ? "✅" : "❌"}
-        </div>
-      </div>
-    `;
-  }).join("");
-
-  return `<p>Review:</p>${rows}`;
-}
-
-load();
+]
